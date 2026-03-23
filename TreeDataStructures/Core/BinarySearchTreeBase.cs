@@ -27,6 +27,7 @@ public abstract class BinarySearchTreeBase<TKey, TValue, TNode>(IComparer<TKey>?
         {
             Root = CreateNode(key, value);
             this.Count++;
+            OnNodeAdded(Root);
             return;
         }
 
@@ -41,6 +42,7 @@ public abstract class BinarySearchTreeBase<TKey, TValue, TNode>(IComparer<TKey>?
                     curr.Left = CreateNode(key, value);
                     curr.Left.Parent = curr;
                     this.Count++;
+                    OnNodeAdded(curr.Left);
                     return;
                 }
                 curr = curr.Left;
@@ -52,6 +54,7 @@ public abstract class BinarySearchTreeBase<TKey, TValue, TNode>(IComparer<TKey>?
                     curr.Right = CreateNode(key, value);
                     curr.Right.Parent = curr;
                     this.Count++;
+                    OnNodeAdded(curr.Right);
                     return;
                 }
                 curr = curr.Right;
@@ -68,8 +71,25 @@ public abstract class BinarySearchTreeBase<TKey, TValue, TNode>(IComparer<TKey>?
             return false;
         }
 
+        var parentForHook = node.Parent;
+        var childForHook = node.Left ?? node.Right;
+
+        if (node.Left != null && node.Right != null)
+        {
+            var min = FindMin(node.Right);
+            if (min != null)
+            {
+                childForHook = min;
+                if (min.Parent != node)
+                {
+                    parentForHook = min.Parent;
+                }
+            }
+        }
+
         RemoveNode(node);
         this.Count--;
+        OnNodeRemoved(parentForHook, childForHook);
         return true;
     }
 
@@ -111,7 +131,7 @@ public abstract class BinarySearchTreeBase<TKey, TValue, TNode>(IComparer<TKey>?
         return node;
     }
 
-    public virtual bool ContainsKey(TKey key) => FindNode(key) != null;
+    public virtual bool ContainsKey(TKey key) => TryGetValue(key, out _);
 
     public virtual bool TryGetValue(TKey key, [MaybeNullWhen(false)] out TValue value)
     {
