@@ -31,7 +31,7 @@ public abstract class BinarySearchTreeBase<TKey, TValue, TNode>(IComparer<TKey>?
             return;
         }
 
-        TNode? curr = Root;
+        TNode curr = Root;
         while (curr != null)
         {
             int cmp = Comparer.Compare(key, curr.Key);
@@ -258,7 +258,11 @@ public abstract class BinarySearchTreeBase<TKey, TValue, TNode>(IComparer<TKey>?
 
     #endregion
 
-    public IEnumerable<TreeEntry<TKey, TValue>> InOrder() => new TreeIterator(Root, TraversalStrategy.InOrder);
+    public IEnumerable<TreeEntry<TKey, TValue>> InOrder(bool isReverse = false) =>
+        new TreeIterator(Root, isReverse ? TraversalStrategy.InOrderReverse : TraversalStrategy.InOrder);
+
+    public IEnumerable<TreeEntry<TKey, TValue>> InOrder() => InOrder(false);
+    public IEnumerable<TreeEntry<TKey, TValue>> InOrderReverse() => InOrder(true);
 
     private IEnumerable<TreeEntry<TKey, TValue>> InOrderTraversal(TNode? node)
     {
@@ -267,14 +271,37 @@ public abstract class BinarySearchTreeBase<TKey, TValue, TNode>(IComparer<TKey>?
             yield break;
         }
 
-        throw new NotImplementedException();
+        var stack = new Stack<TNode?>();
+        var current = node;
+
+        while (current != null || stack.Count > 0)
+        {
+            while (current != null)
+            {
+                stack.Push(current);
+                current = current.Left;
+            }
+
+            current = stack.Pop();
+            if (current != null)
+            {
+                yield return new TreeEntry<TKey, TValue>(current.Key, current.Value, 0);
+                current = current.Right;
+            }
+        }
     }
 
-    public IEnumerable<TreeEntry<TKey, TValue>> PreOrder() => new TreeIterator(Root, TraversalStrategy.PreOrder);
-    public IEnumerable<TreeEntry<TKey, TValue>> PostOrder() => new TreeIterator(Root, TraversalStrategy.PostOrder);
-    public IEnumerable<TreeEntry<TKey, TValue>> InOrderReverse() => new TreeIterator(Root, TraversalStrategy.InOrderReverse);
-    public IEnumerable<TreeEntry<TKey, TValue>> PreOrderReverse() => new TreeIterator(Root, TraversalStrategy.PreOrderReverse);
-    public IEnumerable<TreeEntry<TKey, TValue>> PostOrderReverse() => new TreeIterator(Root, TraversalStrategy.PostOrderReverse);
+    public IEnumerable<TreeEntry<TKey, TValue>> PreOrder(bool isReverse = false) =>
+        new TreeIterator(Root, isReverse ? TraversalStrategy.PreOrderReverse : TraversalStrategy.PreOrder);
+
+    public IEnumerable<TreeEntry<TKey, TValue>> PreOrder() => PreOrder(false);
+    public IEnumerable<TreeEntry<TKey, TValue>> PreOrderReverse() => PreOrder(true);
+
+    public IEnumerable<TreeEntry<TKey, TValue>> PostOrder(bool isReverse = false) =>
+        new TreeIterator(Root, isReverse ? TraversalStrategy.PostOrderReverse : TraversalStrategy.PostOrder);
+
+    public IEnumerable<TreeEntry<TKey, TValue>> PostOrder() => PostOrder(false);
+    public IEnumerable<TreeEntry<TKey, TValue>> PostOrderReverse() => PostOrder(true);
 
     /// <summary>
     /// Внутренний класс-итератор. 
@@ -373,9 +400,20 @@ public abstract class BinarySearchTreeBase<TKey, TValue, TNode>(IComparer<TKey>?
         private void CollectPreOrder(TNode? node, List<TNode?> result)
         {
             if (node == null) return;
-            result.Add(node);
-            CollectPreOrder(node.Left, result);
-            CollectPreOrder(node.Right, result);
+
+            var stack = new Stack<TNode?>();
+            stack.Push(node);
+
+            while (stack.Count > 0)
+            {
+                var current = stack.Pop();
+                if (current == null) continue;
+
+                result.Add(current);
+
+                if (current.Right != null) stack.Push(current.Right);
+                if (current.Left != null) stack.Push(current.Left);
+            }
         }
         
         private void InitPostOrder(TNode? root)
@@ -409,9 +447,27 @@ public abstract class BinarySearchTreeBase<TKey, TValue, TNode>(IComparer<TKey>?
         private void CollectPostOrder(TNode? node, List<TNode?> result)
         {
             if (node == null) return;
-            CollectPostOrder(node.Left, result);
-            CollectPostOrder(node.Right, result);
-            result.Add(node);
+
+            var first = new Stack<TNode?>();
+            var second = new Stack<TNode?>();
+
+            first.Push(node);
+
+            while (first.Count > 0)
+            {
+                var current = first.Pop();
+                if (current == null) continue;
+
+                second.Push(current);
+
+                if (current.Left != null) first.Push(current.Left);
+                if (current.Right != null) first.Push(current.Right);
+            }
+
+            while (second.Count > 0)
+            {
+                result.Add(second.Pop());
+            }
         }
 
         public void Dispose() { }

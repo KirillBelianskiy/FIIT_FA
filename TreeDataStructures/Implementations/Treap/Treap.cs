@@ -9,26 +9,10 @@ public class Treap<TKey, TValue> : BinarySearchTreeBase<TKey, TValue, TreapNode<
     {
         return new TreapNode<TKey, TValue>(key, value);
     }
-    
-    public Treap() { }
 
-    public Treap(TKey key, TValue value, TreapNode<TKey, TValue>? left, TreapNode<TKey, TValue>? right)
+    public Treap()
     {
-        var root = CreateNode(key, value);
-        root.Left = left;
-        root.Right = right;
-        if (root.Left != null) root.Left.Parent = root;
-        if (root.Right != null) root.Right.Parent = root;
-        Root = root;
-        Count = 1 + (left != null ? 1 : 0) + (right != null ? 1 : 0);
-        Count = 1 + CountNodes(left) + CountNodes(right);
     }
-    
-    private int CountNodes(TreapNode<TKey, TValue>? node) {
-        if (node == null) return 0;
-        return 1 + CountNodes(node.Left) + CountNodes(node.Right);
-    }
-
 
     /// <summary>
     /// Разрезает дерево с корнем <paramref name="root"/> на два поддерева:
