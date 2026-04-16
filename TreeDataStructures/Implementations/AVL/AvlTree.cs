@@ -7,144 +7,195 @@ public class AvlTree<TKey, TValue> : BinarySearchTreeBase<TKey, TValue, AvlNode<
 {
     protected override AvlNode<TKey, TValue> CreateNode(TKey key, TValue value)
         => new(key, value);
-    
+
     protected override void OnNodeAdded(AvlNode<TKey, TValue> newNode)
     {
-        AvlNode<TKey, TValue>? current = newNode;
-        while (current != null)
-        {
-            UpdateHeight(current);
-            current = Rebalance(current).Parent;
-        }
+        RebalanceFrom(newNode);
     }
 
     protected override void OnNodeRemoved(AvlNode<TKey, TValue>? parent, AvlNode<TKey, TValue>? child)
     {
-        AvlNode<TKey, TValue>? current = parent ?? child;
-        while (current != null)
-        {
-            UpdateHeight(current);
-            current = Rebalance(current).Parent;
-        }
+        RebalanceFrom(parent ?? child);
     }
 
-    private static int Height(AvlNode<TKey, TValue>? node)
+    private static int GetHeight(AvlNode<TKey, TValue>? node)
     {
-        return node?.Height ?? 0;
+        if (node == null) return 0;
+        return node.Height;
     }
 
     private static void UpdateHeight(AvlNode<TKey, TValue> node)
     {
-        int leftHeight = Height(node.Left);
-        int rightHeight = Height(node.Right);
-        node.Height = Math.Max(leftHeight, rightHeight) + 1;
+        node.Height = 1 + Math.Max(GetHeight(node.Left), GetHeight(node.Right));
     }
 
-    private static int Balance(AvlNode<TKey, TValue> node)
+    private static int GetBalanceFactor(AvlNode<TKey, TValue> node)
     {
-        return Height(node.Left) - Height(node.Right);
+        if (node.Left == null && node.Right == null) return 0;
+        return GetHeight(node.Left) - GetHeight(node.Right);
     }
 
-    private AvlNode<TKey, TValue> Rebalance(AvlNode<TKey, TValue> node)
+    private static bool IsLeftHeavy(int balance)
     {
-        int balance = Balance(node);
+        return balance > 1;
+    }
 
-        if (balance > 1)
+    private static bool IsRightHeavy(int balance)
+    {
+        return balance < -1;
+    }
+
+    private void RebalanceFrom(AvlNode<TKey, TValue>? start)
+    {
+        var current = start;
+        while (current != null)
         {
-            if (node.Left != null && Balance(node.Left) < 0)
+            UpdateHeight(current);
+            var balance = GetBalanceFactor(current);
+
+            if (IsLeftHeavy(balance) || IsRightHeavy(balance))
             {
-                RotateLeftLocal(node.Left);
+                var newSubtreeRoot = RebalanceAt(current);
+                current = newSubtreeRoot.Parent;
+            }
+            else
+            {
+                current = current.Parent;
+            }
+        }
+    }
+
+    private AvlNode<TKey, TValue> RebalanceAt(AvlNode<TKey, TValue> node)
+    {
+        var balanceFactor = GetBalanceFactor(node);
+
+        if (IsLeftHeavy(balanceFactor))
+        {
+            var left = node.Left ?? throw new InvalidOperationException("AVL invariant broken: expected left child.");
+            if (GetBalanceFactor(left) >= 0)
+            {
+                RotateLL(node);
+                return left;
             }
 
-            return RotateRightLocal(node);
+            var newRoot = left.Right ??
+                          throw new InvalidOperationException("AVL invariant broken: expected left-right child.");
+            RotateLR(node);
+            return newRoot;
         }
 
-        if (balance < -1)
+        if (IsRightHeavy(balanceFactor))
         {
-            if (node.Right != null && Balance(node.Right) > 0)
+            var right = node.Right ??
+                        throw new InvalidOperationException("AVL invariant broken: expected right child.");
+            if (GetBalanceFactor(right) <= 0)
             {
-                RotateRightLocal(node.Right);
+                RotateRR(node);
+                return right;
             }
 
-            return RotateLeftLocal(node);
+            var newRoot = right.Left ??
+                          throw new InvalidOperationException("AVL invariant broken: expected right-left child.");
+            RotateRL(node);
+            return newRoot;
         }
 
         return node;
     }
 
-    private AvlNode<TKey, TValue> RotateLeftLocal(AvlNode<TKey, TValue> x)
+    private void RotateLL(AvlNode<TKey, TValue> node)
     {
-        AvlNode<TKey, TValue>? y = x.Right;
-        if (y == null)
-        {
-            return x;
-        }
-
-        AvlNode<TKey, TValue>? beta = y.Left;
-
-        y.Parent = x.Parent;
-        if (x.Parent == null)
-        {
-            Root = y;
-        }
-        else if (x.IsLeftChild)
-        {
-            x.Parent.Left = y;
-        }
-        else
-        {
-            x.Parent.Right = y;
-        }
-
-        y.Left = x;
-        x.Parent = y;
-
-        x.Right = beta;
-        if (beta != null)
-        {
-            beta.Parent = x;
-        }
-
-        UpdateHeight(x);
-        UpdateHeight(y);
-        return y;
+        var a = node;
+        var b = node.Left ?? throw new InvalidOperationException("RotateLL requires left child.");
+        var rightChildB = b.Right;
+        
+        b.Parent = a.Parent;
+        if (a.Parent == null) Root = b;
+        else if (a.Parent.Left == a) a.Parent.Left = b;
+        else a.Parent.Right = b;
+        
+        a.Parent = b;
+        b.Right = a;
+        a.Left = rightChildB;
+        if (rightChildB != null) rightChildB.Parent = a;
+        
+        UpdateHeight(a);
+        UpdateHeight(b);
     }
 
-    private AvlNode<TKey, TValue> RotateRightLocal(AvlNode<TKey, TValue> y)
+    private void RotateLR(AvlNode<TKey, TValue> node)
     {
-        AvlNode<TKey, TValue>? x = y.Left;
-        if (x == null)
-        {
-            return y;
-        }
+        var a = node;
+        var b = node.Left ?? throw new InvalidOperationException("RotateLR requires left child.");
+        var c = b.Right ?? throw new InvalidOperationException("RotateLR requires left-right child.");
+        var leftChildC = c.Left;
+        var rightChildC = c.Right;
+        
+        c.Parent = a.Parent;
+        if (a.Parent == null) Root = c;
+        else if (a.Parent.Left == a) a.Parent.Left = c;
+        else a.Parent.Right = c;
+        
+        b.Parent = c;
+        c.Left = b;
+        c.Right = a;
+        a.Parent = c;
+        b.Right = leftChildC;
+        
+        if (leftChildC != null) leftChildC.Parent = b;
+        a.Left = rightChildC;
+        if (rightChildC != null) rightChildC.Parent = a;
+        
+        UpdateHeight(a);
+        UpdateHeight(b);
+        UpdateHeight(c);
+    }
 
-        AvlNode<TKey, TValue>? beta = x.Right;
+    private void RotateRR(AvlNode<TKey, TValue> node)
+    {
+        var a = node;
+        var b = node.Right ?? throw new InvalidOperationException("RotateRR requires right child.");
+        var leftChildB = b.Left;
+        
+        b.Parent = a.Parent;
+        if (a.Parent == null) Root = b;
+        else if (a.Parent.Left == a) a.Parent.Left = b;
+        else a.Parent.Right = b;
+        
+        a.Parent = b;
+        b.Left = a;
+        a.Right = leftChildB;
+        if (leftChildB != null) leftChildB.Parent = a;
+        
+        UpdateHeight(a);
+        UpdateHeight(b);
+    }
 
-        x.Parent = y.Parent;
-        if (y.Parent == null)
-        {
-            Root = x;
-        }
-        else if (y.IsLeftChild)
-        {
-            y.Parent.Left = x;
-        }
-        else
-        {
-            y.Parent.Right = x;
-        }
-
-        x.Right = y;
-        y.Parent = x;
-
-        y.Left = beta;
-        if (beta != null)
-        {
-            beta.Parent = y;
-        }
-
-        UpdateHeight(y);
-        UpdateHeight(x);
-        return x;
+    private void RotateRL(AvlNode<TKey, TValue> node)
+    {
+        var a = node;
+        var b = node.Right ?? throw new InvalidOperationException("RotateRL requires right child.");
+        var c = b.Left ?? throw new InvalidOperationException("RotateRL requires right-left child.");
+        var leftChildC = c.Left;
+        var rightChildC = c.Right;
+        
+        c.Parent = a.Parent;
+        if (a.Parent == null) Root = c;
+        else if (a.Parent.Left == a) a.Parent.Left = c;
+        else a.Parent.Right = c;
+        
+        b.Parent = c;
+        c.Right = b;
+        c.Left = a;
+        a.Parent = c;
+        b.Left = rightChildC;
+        
+        if (rightChildC != null) rightChildC.Parent = b;
+        a.Right = leftChildC;
+        if (leftChildC != null) leftChildC.Parent = a;
+        
+        UpdateHeight(a);
+        UpdateHeight(b);
+        UpdateHeight(c);
     }
 }

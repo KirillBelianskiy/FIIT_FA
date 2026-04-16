@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using TreeDataStructures.Implementations.BST;
 
 namespace TreeDataStructures.Implementations.Splay;
@@ -8,154 +8,167 @@ public class SplayTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
 {
     protected override BstNode<TKey, TValue> CreateNode(TKey key, TValue value)
         => new(key, value);
-    
+
+    public SplayTree()
+    {
+    }
+
+    private new void RotateLeft(BstNode<TKey, TValue> node)
+    {
+        if (node.Right == null) return;
+
+        var right = node.Right;
+        var leftOfRight = right.Left;
+        var parent = node.Parent;
+
+        node.Right = leftOfRight;
+        if (leftOfRight != null) leftOfRight.Parent = node;
+
+        right.Left = node;
+        node.Parent = right;
+
+        right.Parent = parent;
+        if (parent != null)
+        {
+            if (parent.Left == node)
+                parent.Left = right;
+            else
+                parent.Right = right;
+        }
+        else
+        {
+            Root = right;
+        }
+    }
+
+    private new void RotateRight(BstNode<TKey, TValue> node)
+    {
+        if (node.Left == null) return;
+
+        var left = node.Left;
+        var rightOfLeft = left.Right;
+        var parent = node.Parent;
+
+        node.Left = rightOfLeft;
+        if (rightOfLeft != null) rightOfLeft.Parent = node;
+
+        left.Right = node;
+        node.Parent = left;
+
+        left.Parent = parent;
+        if (parent != null)
+        {
+            if (parent.Left == node)
+                parent.Left = left;
+            else
+                parent.Right = left;
+        }
+        else
+        {
+            Root = left;
+        }
+    }
+
+    private void Splay(BstNode<TKey, TValue>? node)
+    {
+        if (node == null) return;
+        
+        while (node.Parent != null)
+        {
+            var parent = node.Parent;
+            var grandParent = parent.Parent;
+
+            if (grandParent == null)
+            {
+                // Zig
+                if (node == parent.Left)
+                    RotateRight(parent);
+                else
+                    RotateLeft(parent);
+            }
+            else
+            {
+                bool nodeIsLeft = (node == parent.Left);
+                bool parentIsLeft = (parent == grandParent.Left);
+
+                if (nodeIsLeft && parentIsLeft)
+                {
+                    // Zig-Zig (left-left)
+                    RotateRight(grandParent);
+                    RotateRight(parent);
+                }
+                else if (!nodeIsLeft && !parentIsLeft)
+                {
+                    //Zig-Zig (right-right)
+                    RotateLeft(grandParent);
+                    RotateLeft(parent);
+                }
+                else
+                {
+                    // Zig-Zag
+                    if (nodeIsLeft)
+                    {
+                        RotateRight(parent);
+                        RotateLeft(grandParent);
+                    }
+                    else
+                    {
+                        RotateLeft(parent);
+                        RotateRight(grandParent);
+                    }
+                }
+            }
+        }
+        Root = node;
+    }
+
+
     protected override void OnNodeAdded(BstNode<TKey, TValue> newNode)
     {
-        if (Root != null && Count >= 3 && Comparer.Compare(newNode.Key, Root.Key) < 0)
+        if (Root == null || Count < 3) return;
+        if (Comparer.Compare(newNode.Key, Root.Key) < 0)
         {
             Splay(newNode);
         }
     }
-    
+
     protected override void OnNodeRemoved(BstNode<TKey, TValue>? parent, BstNode<TKey, TValue>? child)
     {
+        Splay(parent ?? child);
     }
 
-    public override bool ContainsKey(TKey key)
+    private BstNode<TKey, TValue>? FindNode(TKey key, out BstNode<TKey, TValue>? lastVisited)
     {
-        BstNode<TKey, TValue>? node = FindNode(key);
-        if (node == null)
+        lastVisited = null;
+        var current = Root;
+        while (current != null)
         {
-            return false;
+            lastVisited = current;
+            int cmp = Comparer.Compare(key, current.Key);
+            if (cmp == 0)
+                return current;
+
+            current = cmp < 0 ? current.Left : current.Right;
         }
 
-        Splay(node);
-        return true;
+        return null;
     }
-    
+
+
     public override bool TryGetValue(TKey key, [MaybeNullWhen(false)] out TValue value)
     {
-        BstNode<TKey, TValue>? node = FindNode(key);
+        var node = FindNode(key, out var lastVisited);
         if (node != null)
         {
-            Splay(node);
             value = node.Value;
+            Splay(node);
             return true;
         }
-
-        value = default;
-        return false;
-    }
-
-    private void Splay(BstNode<TKey, TValue> node)
-    {
-        while (node.Parent != null)
-        {
-            BstNode<TKey, TValue> parent = node.Parent;
-            BstNode<TKey, TValue>? grandParent = parent.Parent;
-
-            if (grandParent == null)
-            {
-                if (node.IsLeftChild)
-                {
-                    RotateR(parent);
-                }
-                else
-                {
-                    RotateL(parent);
-                }
-
-                continue;
-            }
-
-            if (node.IsLeftChild && parent.IsLeftChild)
-            {
-                RotateR(grandParent);
-                RotateR(parent);
-            }
-            else if (node.IsRightChild && parent.IsRightChild)
-            {
-                RotateL(grandParent);
-                RotateL(parent);
-            }
-            else if (node.IsRightChild && parent.IsLeftChild)
-            {
-                RotateL(parent);
-                RotateR(grandParent);
-            }
-            else
-            {
-                RotateR(parent);
-                RotateL(grandParent);
-            }
-        }
-
-        Root = node;
-        Root.Parent = null;
-    }
-
-    private void RotateL(BstNode<TKey, TValue> x)
-    {
-        BstNode<TKey, TValue>? y = x.Right;
-        if (y == null)
-        {
-            return;
-        }
-
-        x.Right = y.Left;
-        if (y.Left != null)
-        {
-            y.Left.Parent = x;
-        }
-
-        y.Parent = x.Parent;
-        if (x.Parent == null)
-        {
-            Root = y;
-        }
-        else if (x.IsLeftChild)
-        {
-            x.Parent.Left = y;
-        }
         else
         {
-            x.Parent.Right = y;
+            Splay(lastVisited);
+            value = default;
+            return false;
         }
-
-        y.Left = x;
-        x.Parent = y;
     }
-
-    private void RotateR(BstNode<TKey, TValue> y)
-    {
-        BstNode<TKey, TValue>? x = y.Left;
-        if (x == null)
-        {
-            return;
-        }
-
-        y.Left = x.Right;
-        if (x.Right != null)
-        {
-            x.Right.Parent = y;
-        }
-
-        x.Parent = y.Parent;
-        if (y.Parent == null)
-        {
-            Root = x;
-        }
-        else if (y.IsLeftChild)
-        {
-            y.Parent.Left = x;
-        }
-        else
-        {
-            y.Parent.Right = x;
-        }
-
-        x.Right = y;
-        y.Parent = x;
-    }
-    
 }
