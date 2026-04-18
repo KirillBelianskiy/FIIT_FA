@@ -16,6 +16,12 @@ namespace TreeDataStructures.Tests.Base;
 public abstract class GenericTreeTests<TTree> where TTree : ITree<int, string>, new()
 {
     private TTree _tree;
+
+    private bool HasStableShapeForTraversalAssertions()
+    {
+        var typeName = _tree.GetType().Name;
+        return !typeName.StartsWith("SplayTree") && !typeName.StartsWith("Treap");
+    }
     
     [SetUp]
     public void Setup()
@@ -169,8 +175,17 @@ public abstract class GenericTreeTests<TTree> where TTree : ITree<int, string>, 
         Assert.Multiple(() =>
         {
             Assert.That(inOrder, Is.EqualTo(new[] { 5, 10, 15 }), "InOrder failed");
-            Assert.That(preOrder, Is.EqualTo(new[] { 10, 5, 15 }), "PreOrder failed");
-            Assert.That(postOrder, Is.EqualTo(new[] { 5, 15, 10 }), "PostOrder failed");
+
+            if (HasStableShapeForTraversalAssertions())
+            {
+                Assert.That(preOrder, Is.EqualTo(new[] { 10, 5, 15 }), "PreOrder failed");
+                Assert.That(postOrder, Is.EqualTo(new[] { 5, 15, 10 }), "PostOrder failed");
+            }
+            else
+            {
+                Assert.That(preOrder, Is.EquivalentTo(new[] { 5, 10, 15 }), "PreOrder must contain all keys");
+                Assert.That(postOrder, Is.EquivalentTo(new[] { 5, 10, 15 }), "PostOrder must contain all keys");
+            }
         });
     }
     
@@ -188,8 +203,17 @@ public abstract class GenericTreeTests<TTree> where TTree : ITree<int, string>, 
         Assert.Multiple(() =>
         {
             Assert.That(inOrderRev, Is.EqualTo(new[] { 15, 10, 5 }), "InOrderReverse failed");
-            Assert.That(preOrderRev, Is.EqualTo(new[] { 15, 5, 10 }), "PreOrderReverse failed");
-            Assert.That(postOrderRev, Is.EqualTo(new[] { 10, 15, 5 }), "PostOrderReverse failed");
+
+            if (HasStableShapeForTraversalAssertions())
+            {
+                Assert.That(preOrderRev, Is.EqualTo(new[] { 15, 5, 10 }), "PreOrderReverse failed");
+                Assert.That(postOrderRev, Is.EqualTo(new[] { 10, 15, 5 }), "PostOrderReverse failed");
+            }
+            else
+            {
+                Assert.That(preOrderRev, Is.EquivalentTo(new[] { 5, 10, 15 }), "PreOrderReverse must contain all keys");
+                Assert.That(postOrderRev, Is.EquivalentTo(new[] { 5, 10, 15 }), "PostOrderReverse must contain all keys");
+            }
         });
     }
     

@@ -9,10 +9,6 @@ public class SplayTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
     protected override BstNode<TKey, TValue> CreateNode(TKey key, TValue value)
         => new(key, value);
 
-    public SplayTree()
-    {
-    }
-
     private new void RotateLeft(BstNode<TKey, TValue> node)
     {
         if (node.Right == null) return;
@@ -72,7 +68,7 @@ public class SplayTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
     private void Splay(BstNode<TKey, TValue>? node)
     {
         if (node == null) return;
-        
+
         while (node.Parent != null)
         {
             var parent = node.Parent;
@@ -119,17 +115,14 @@ public class SplayTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
                 }
             }
         }
+
         Root = node;
     }
 
 
     protected override void OnNodeAdded(BstNode<TKey, TValue> newNode)
     {
-        if (Root == null || Count < 3) return;
-        if (Comparer.Compare(newNode.Key, Root.Key) < 0)
-        {
-            Splay(newNode);
-        }
+        Splay(newNode);
     }
 
     protected override void OnNodeRemoved(BstNode<TKey, TValue>? parent, BstNode<TKey, TValue>? child)
@@ -157,7 +150,7 @@ public class SplayTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
 
     public override bool TryGetValue(TKey key, [MaybeNullWhen(false)] out TValue value)
     {
-        var node = FindNode(key, out var lastVisited);
+        var node = FindNode(key, out var  lastVisited);
         if (node != null)
         {
             value = node.Value;

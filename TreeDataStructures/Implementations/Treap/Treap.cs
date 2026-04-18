@@ -10,10 +10,6 @@ public class Treap<TKey, TValue> : BinarySearchTreeBase<TKey, TValue, TreapNode<
         return new TreapNode<TKey, TValue>(key, value);
     }
 
-    public Treap()
-    {
-    }
-
     /// <summary>
     /// Разрезает дерево с корнем <paramref name="root"/> на два поддерева:
     /// Left: все ключи <= <paramref name="key"/>

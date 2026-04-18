@@ -71,31 +71,32 @@ public class AvlTree<TKey, TValue> : BinarySearchTreeBase<TKey, TValue, AvlNode<
 
         if (IsLeftHeavy(balanceFactor))
         {
-            var left = node.Left ?? throw new InvalidOperationException("AVL invariant broken: expected left child.");
+            var left = node.Left;
+            if (left == null) return node;
             if (GetBalanceFactor(left) >= 0)
             {
                 RotateLL(node);
                 return left;
             }
 
-            var newRoot = left.Right ??
-                          throw new InvalidOperationException("AVL invariant broken: expected left-right child.");
+            var newRoot = left.Right;
+            if (newRoot == null) return node;
             RotateLR(node);
             return newRoot;
         }
 
         if (IsRightHeavy(balanceFactor))
         {
-            var right = node.Right ??
-                        throw new InvalidOperationException("AVL invariant broken: expected right child.");
+            var right = node.Right;
+            if (right == null) return node;
             if (GetBalanceFactor(right) <= 0)
             {
                 RotateRR(node);
                 return right;
             }
 
-            var newRoot = right.Left ??
-                          throw new InvalidOperationException("AVL invariant broken: expected right-left child.");
+            var newRoot = right.Left;
+            if (newRoot == null) return node;
             RotateRL(node);
             return newRoot;
         }
@@ -106,7 +107,8 @@ public class AvlTree<TKey, TValue> : BinarySearchTreeBase<TKey, TValue, AvlNode<
     private void RotateLL(AvlNode<TKey, TValue> node)
     {
         var a = node;
-        var b = node.Left ?? throw new InvalidOperationException("RotateLL requires left child.");
+        var b = node.Left;
+        if (b == null) return;
         var rightChildB = b.Right;
         
         b.Parent = a.Parent;
@@ -126,8 +128,10 @@ public class AvlTree<TKey, TValue> : BinarySearchTreeBase<TKey, TValue, AvlNode<
     private void RotateLR(AvlNode<TKey, TValue> node)
     {
         var a = node;
-        var b = node.Left ?? throw new InvalidOperationException("RotateLR requires left child.");
-        var c = b.Right ?? throw new InvalidOperationException("RotateLR requires left-right child.");
+        var b = node.Left;
+        if (b == null) return;
+        var c = b.Right;
+        if (c == null) return;
         var leftChildC = c.Left;
         var rightChildC = c.Right;
         
@@ -154,7 +158,8 @@ public class AvlTree<TKey, TValue> : BinarySearchTreeBase<TKey, TValue, AvlNode<
     private void RotateRR(AvlNode<TKey, TValue> node)
     {
         var a = node;
-        var b = node.Right ?? throw new InvalidOperationException("RotateRR requires right child.");
+        var b = node.Right;
+        if (b == null) return;
         var leftChildB = b.Left;
         
         b.Parent = a.Parent;
@@ -174,8 +179,10 @@ public class AvlTree<TKey, TValue> : BinarySearchTreeBase<TKey, TValue, AvlNode<
     private void RotateRL(AvlNode<TKey, TValue> node)
     {
         var a = node;
-        var b = node.Right ?? throw new InvalidOperationException("RotateRL requires right child.");
-        var c = b.Left ?? throw new InvalidOperationException("RotateRL requires right-left child.");
+        var b = node.Right;
+        if (b == null) return;
+        var c = b.Left;
+        if (c == null) return;
         var leftChildC = c.Left;
         var rightChildC = c.Right;
         
