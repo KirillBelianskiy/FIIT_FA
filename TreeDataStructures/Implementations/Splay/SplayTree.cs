@@ -9,62 +9,6 @@ public class SplayTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
     protected override BstNode<TKey, TValue> CreateNode(TKey key, TValue value)
         => new(key, value);
 
-    private new void RotateLeft(BstNode<TKey, TValue> node)
-    {
-        if (node.Right == null) return;
-
-        var right = node.Right;
-        var leftOfRight = right.Left;
-        var parent = node.Parent;
-
-        node.Right = leftOfRight;
-        if (leftOfRight != null) leftOfRight.Parent = node;
-
-        right.Left = node;
-        node.Parent = right;
-
-        right.Parent = parent;
-        if (parent != null)
-        {
-            if (parent.Left == node)
-                parent.Left = right;
-            else
-                parent.Right = right;
-        }
-        else
-        {
-            Root = right;
-        }
-    }
-
-    private new void RotateRight(BstNode<TKey, TValue> node)
-    {
-        if (node.Left == null) return;
-
-        var left = node.Left;
-        var rightOfLeft = left.Right;
-        var parent = node.Parent;
-
-        node.Left = rightOfLeft;
-        if (rightOfLeft != null) rightOfLeft.Parent = node;
-
-        left.Right = node;
-        node.Parent = left;
-
-        left.Parent = parent;
-        if (parent != null)
-        {
-            if (parent.Left == node)
-                parent.Left = left;
-            else
-                parent.Right = left;
-        }
-        else
-        {
-            Root = left;
-        }
-    }
-
     private void Splay(BstNode<TKey, TValue>? node)
     {
         if (node == null) return;
@@ -90,27 +34,23 @@ public class SplayTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
                 if (nodeIsLeft && parentIsLeft)
                 {
                     // Zig-Zig (left-left)
-                    RotateRight(grandParent);
-                    RotateRight(parent);
+                    RotateBigRight(grandParent);
                 }
                 else if (!nodeIsLeft && !parentIsLeft)
                 {
                     //Zig-Zig (right-right)
-                    RotateLeft(grandParent);
-                    RotateLeft(parent);
+                    RotateBigLeft(grandParent);
                 }
                 else
                 {
                     // Zig-Zag
                     if (nodeIsLeft)
                     {
-                        RotateRight(parent);
-                        RotateLeft(grandParent);
+                        RotateDoubleLeft(grandParent);
                     }
                     else
                     {
-                        RotateLeft(parent);
-                        RotateRight(grandParent);
+                        RotateDoubleRight(grandParent);
                     }
                 }
             }

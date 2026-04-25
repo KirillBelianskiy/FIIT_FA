@@ -210,32 +210,92 @@ public abstract class BinarySearchTreeBase<TKey, TValue, TNode>(IComparer<TKey>?
 
     protected void RotateLeft(TNode x)
     {
-        throw new NotImplementedException();
+        if (x.Right == null) return;
+
+        var right = x.Right;
+        var leftOfRight = right.Left;
+        var parent = x.Parent;
+
+        x.Right = leftOfRight;
+        if (leftOfRight != null) leftOfRight.Parent = x;
+
+        right.Left = x;
+        x.Parent = right;
+
+        right.Parent = parent;
+        if (parent != null)
+        {
+            if (parent.Left == x)
+                parent.Left = right;
+            else
+                parent.Right = right;
+        }
+        else
+        {
+            Root = right;
+        }
     }
 
     protected void RotateRight(TNode y)
     {
-        throw new NotImplementedException();
+        if (y.Left == null) return;
+
+        var left = y.Left;
+        var rightOfLeft = left.Right;
+        var parent = y.Parent;
+
+        y.Left = rightOfLeft;
+        if (rightOfLeft != null) rightOfLeft.Parent = y;
+
+        left.Right = y;
+        y.Parent = left;
+
+        left.Parent = parent;
+        if (parent != null)
+        {
+            if (parent.Left == y)
+                parent.Left = left;
+            else
+                parent.Right = left;
+        }
+        else
+        {
+            Root = left;
+        }
     }
 
     protected void RotateBigLeft(TNode x)
     {
-        throw new NotImplementedException();
+        RotateLeft(x);
+        if (x.Parent != null)
+        {
+            RotateLeft(x.Parent);
+        }
     }
 
     protected void RotateBigRight(TNode y)
     {
-        throw new NotImplementedException();
+        RotateRight(y);
+        if (y.Parent != null)
+        {
+            RotateRight(y.Parent);
+        }
     }
 
     protected void RotateDoubleLeft(TNode x)
     {
-        throw new NotImplementedException();
+        if (x.Right == null) return;
+
+        RotateRight(x.Right);
+        RotateLeft(x);
     }
 
     protected void RotateDoubleRight(TNode y)
     {
-        throw new NotImplementedException();
+        if (y.Left == null) return;
+
+        RotateLeft(y.Left);
+        RotateRight(y);
     }
 
     protected void Transplant(TNode u, TNode? v)

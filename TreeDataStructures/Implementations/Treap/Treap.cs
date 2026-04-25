@@ -15,7 +15,7 @@ public class Treap<TKey, TValue> : BinarySearchTreeBase<TKey, TValue, TreapNode<
     /// Left: все ключи <= <paramref name="key"/>
     /// Right: все ключи > <paramref name="key"/>
     /// </summary>
-    protected virtual (TreapNode<TKey, TValue>? Left, TreapNode<TKey, TValue>? Right) Split(
+    private (TreapNode<TKey, TValue>? Left, TreapNode<TKey, TValue>? Right) Split(
         TreapNode<TKey, TValue>? root, TKey key)
     {
         if (root == null) return (null, null);
@@ -39,7 +39,7 @@ public class Treap<TKey, TValue> : BinarySearchTreeBase<TKey, TValue, TreapNode<
     /// Важное условие: все ключи в <paramref name="left"/> должны быть меньше ключей в <paramref name="right"/>.
     /// Слияние происходит на основе Priority (куча).
     /// </summary>
-    protected virtual TreapNode<TKey, TValue>? Merge(TreapNode<TKey, TValue>? left, TreapNode<TKey, TValue>? right)
+    private TreapNode<TKey, TValue>? Merge(TreapNode<TKey, TValue>? left, TreapNode<TKey, TValue>? right)
     {
         if (left == null) return right;
         if (right == null) return left;
@@ -65,7 +65,7 @@ public class Treap<TKey, TValue> : BinarySearchTreeBase<TKey, TValue, TreapNode<
         var newNode = CreateNode(key, value);
         Root = Merge(Merge(left, newNode), right);
         if (Root != null) Root.Parent = null;
-        this.Count++;
+        Count++;
     }
 
     public override bool Remove(TKey key)
@@ -78,7 +78,7 @@ public class Treap<TKey, TValue> : BinarySearchTreeBase<TKey, TValue, TreapNode<
         return true;
     }
 
-    protected virtual TreapNode<TKey, TValue>? RemoveNode(TreapNode<TKey, TValue>? root, TKey key)
+    private TreapNode<TKey, TValue>? RemoveNode(TreapNode<TKey, TValue>? root, TKey key)
     {
         if (root == null) return null;
 

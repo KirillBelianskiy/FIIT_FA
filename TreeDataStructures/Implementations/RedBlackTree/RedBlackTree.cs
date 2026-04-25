@@ -15,53 +15,45 @@ public class RedBlackTree<TKey, TValue> : BinarySearchTreeBase<TKey, TValue, RbN
             return;
         }
 
-        RbNode<TKey, TValue>? current = Root;
+        var curr = Root;
         RbNode<TKey, TValue>? parent = null;
         int cmp = 0;
 
-        while (current != null)
+        while (curr != null)
         {
-            parent = current;
-            cmp = Comparer.Compare(key, current.Key);
+            parent = curr;
+            cmp = Comparer.Compare(key, curr.Key);
 
             if (cmp == 0)
             {
-                current.Value = value;
+                curr.Value = value;
                 return;
             }
 
-            current = cmp < 0 ? current.Left : current.Right;
+            curr = cmp < 0 ? curr.Left : curr.Right;
         }
 
-        RbNode<TKey, TValue> newNode = CreateNode(key, value);
-        newNode.Parent = parent;
+        var node = CreateNode(key, value);
+        node.Parent = parent;
 
         if (cmp < 0)
-        {
-            parent!.Left = newNode;
-        }
+            parent!.Left = node;
         else
-        {
-            parent!.Right = newNode;
-        }
+            parent!.Right = node;
 
         Count++;
-        InsertFixup(newNode);
+        FixAfterInsert(node);
         Root!.Color = RbColor.Black;
     }
 
     public override bool Remove(TKey key)
     {
-        RbNode<TKey, TValue>? z = FindNode(key);
-        if (z == null)
-        {
-            return false;
-        }
+        var z = FindNode(key);
+        if (z == null) return false;
 
-        RbNode<TKey, TValue> y = z;
-        RbColor yOriginalColor = y.Color;
-        RbNode<TKey, TValue>? x;
-        RbNode<TKey, TValue>? xParent;
+        var y = z;
+        var yColor = y.Color;
+        RbNode<TKey, TValue>? x, xParent;
 
         if (z.Left == null)
         {
@@ -77,17 +69,14 @@ public class RedBlackTree<TKey, TValue> : BinarySearchTreeBase<TKey, TValue, RbN
         }
         else
         {
-            y = Minimum(z.Right);
-            yOriginalColor = y.Color;
+            y = Min(z.Right);
+            yColor = y.Color;
             x = y.Right;
 
             if (y.Parent == z)
             {
                 xParent = y;
-                if (x != null)
-                {
-                    x.Parent = y;
-                }
+                if (x != null) x.Parent = y;
             }
             else
             {
@@ -103,10 +92,8 @@ public class RedBlackTree<TKey, TValue> : BinarySearchTreeBase<TKey, TValue, RbN
             y.Color = z.Color;
         }
 
-        if (yOriginalColor == RbColor.Black)
-        {
-            DeleteFixup(x, xParent);
-        }
+        if (yColor == RbColor.Black)
+            FixAfterDelete(x, xParent);
 
         if (Root != null)
         {
@@ -119,290 +106,166 @@ public class RedBlackTree<TKey, TValue> : BinarySearchTreeBase<TKey, TValue, RbN
     }
 
     protected override RbNode<TKey, TValue> CreateNode(TKey key, TValue value)
-    {
-        return new RbNode<TKey, TValue>(key, value) { Color = RbColor.Red };
-    }
-    
-    protected override void OnNodeAdded(RbNode<TKey, TValue> newNode)
-    {
-        // Insert balancing is handled in Add/InsertFixup.
-    }
+        => new(key, value) { Color = RbColor.Red };
 
-    protected override void OnNodeRemoved(RbNode<TKey, TValue>? parent, RbNode<TKey, TValue>? child)
-    {
-        // Delete balancing is handled in Remove/DeleteFixup.
-    }
+    protected override void OnNodeAdded(RbNode<TKey, TValue> newNode) { }
+    protected override void OnNodeRemoved(RbNode<TKey, TValue>? parent, RbNode<TKey, TValue>? child) { }
 
-    private void InsertFixup(RbNode<TKey, TValue> node)
+    private void FixAfterInsert(RbNode<TKey, TValue> z)
     {
-        RbNode<TKey, TValue> z = node;
-        while (ColorOf(z.Parent) == RbColor.Red)
+        while (IsRed(z.Parent))
         {
-            RbNode<TKey, TValue> parent = z.Parent!;
-            RbNode<TKey, TValue> grandParent = parent.Parent!;
+            var parent = z.Parent!;
+            var grand = parent.Parent!;
 
-            if (parent == grandParent.Left)
+            if (parent == grand.Left)
             {
-                RbNode<TKey, TValue>? uncle = grandParent.Right;
-                if (ColorOf(uncle) == RbColor.Red)
+                var uncle = grand.Right;
+                if (IsRed(uncle))
                 {
                     parent.Color = RbColor.Black;
                     uncle!.Color = RbColor.Black;
-                    grandParent.Color = RbColor.Red;
-                    z = grandParent;
+                    grand.Color = RbColor.Red;
+                    z = grand;
                 }
                 else
                 {
                     if (z == parent.Right)
                     {
                         z = parent;
-                        RotateLeftLocal(z);
+                        RotateLeft(z);
                         parent = z.Parent!;
-                        grandParent = parent.Parent!;
+                        grand = parent.Parent!;
                     }
 
                     parent.Color = RbColor.Black;
-                    grandParent.Color = RbColor.Red;
-                    RotateRightLocal(grandParent);
+                    grand.Color = RbColor.Red;
+                    RotateRight(grand);
                 }
             }
             else
             {
-                RbNode<TKey, TValue>? uncle = grandParent.Left;
-                if (ColorOf(uncle) == RbColor.Red)
+                var uncle = grand.Left;
+                if (IsRed(uncle))
                 {
                     parent.Color = RbColor.Black;
                     uncle!.Color = RbColor.Black;
-                    grandParent.Color = RbColor.Red;
-                    z = grandParent;
+                    grand.Color = RbColor.Red;
+                    z = grand;
                 }
                 else
                 {
                     if (z == parent.Left)
                     {
                         z = parent;
-                        RotateRightLocal(z);
+                        RotateRight(z);
                         parent = z.Parent!;
-                        grandParent = parent.Parent!;
+                        grand = parent.Parent!;
                     }
 
                     parent.Color = RbColor.Black;
-                    grandParent.Color = RbColor.Red;
-                    RotateLeftLocal(grandParent);
+                    grand.Color = RbColor.Red;
+                    RotateLeft(grand);
                 }
             }
         }
     }
 
-    private void DeleteFixup(RbNode<TKey, TValue>? x, RbNode<TKey, TValue>? parent)
+    private void FixAfterDelete(RbNode<TKey, TValue>? x, RbNode<TKey, TValue>? parent)
     {
-        RbNode<TKey, TValue>? current = x;
-        RbNode<TKey, TValue>? currentParent = parent;
-
-        while (current != Root && ColorOf(current) == RbColor.Black)
+        while (x != Root && !IsRed(x))
         {
-            if (currentParent == null)
-            {
-                break;
-            }
+            if (parent == null) break;
 
-            if (current == currentParent.Left)
+            if (x == parent.Left)
             {
-                RbNode<TKey, TValue>? sibling = currentParent.Right;
+                var sib = parent.Right;
 
-                if (ColorOf(sibling) == RbColor.Red)
+                if (IsRed(sib))
                 {
-                    sibling!.Color = RbColor.Black;
-                    currentParent.Color = RbColor.Red;
-                    RotateLeftLocal(currentParent);
-                    sibling = currentParent.Right;
+                    sib!.Color = RbColor.Black;
+                    parent.Color = RbColor.Red;
+                    RotateLeft(parent);
+                    sib = parent.Right;
                 }
 
-                if (ColorOf(sibling?.Left) == RbColor.Black && ColorOf(sibling?.Right) == RbColor.Black)
+                if (!IsRed(sib?.Left) && !IsRed(sib?.Right))
                 {
-                    if (sibling != null)
-                    {
-                        sibling.Color = RbColor.Red;
-                    }
-
-                    current = currentParent;
-                    currentParent = current.Parent;
+                    if (sib != null) sib.Color = RbColor.Red;
+                    x = parent;
+                    parent = x.Parent;
                 }
                 else
                 {
-                    if (ColorOf(sibling?.Right) == RbColor.Black)
+                    if (!IsRed(sib?.Right))
                     {
-                        if (sibling?.Left != null)
+                        if (sib?.Left != null) sib.Left.Color = RbColor.Black;
+                        if (sib != null)
                         {
-                            sibling.Left.Color = RbColor.Black;
+                            sib.Color = RbColor.Red;
+                            RotateRight(sib);
                         }
-
-                        if (sibling != null)
-                        {
-                            sibling.Color = RbColor.Red;
-                            RotateRightLocal(sibling);
-                        }
-
-                        sibling = currentParent.Right;
+                        sib = parent.Right;
                     }
 
-                    if (sibling != null)
-                    {
-                        sibling.Color = currentParent.Color;
-                    }
-
-                    currentParent.Color = RbColor.Black;
-                    if (sibling?.Right != null)
-                    {
-                        sibling.Right.Color = RbColor.Black;
-                    }
-
-                    RotateLeftLocal(currentParent);
-                    current = Root;
-                    currentParent = null;
+                    if (sib != null) sib.Color = parent.Color;
+                    parent.Color = RbColor.Black;
+                    if (sib?.Right != null) sib.Right.Color = RbColor.Black;
+                    RotateLeft(parent);
+                    x = Root;
+                    parent = null;
                 }
             }
             else
             {
-                RbNode<TKey, TValue>? sibling = currentParent.Left;
+                var sib = parent.Left;
 
-                if (ColorOf(sibling) == RbColor.Red)
+                if (IsRed(sib))
                 {
-                    sibling!.Color = RbColor.Black;
-                    currentParent.Color = RbColor.Red;
-                    RotateRightLocal(currentParent);
-                    sibling = currentParent.Left;
+                    sib!.Color = RbColor.Black;
+                    parent.Color = RbColor.Red;
+                    RotateRight(parent);
+                    sib = parent.Left;
                 }
 
-                if (ColorOf(sibling?.Right) == RbColor.Black && ColorOf(sibling?.Left) == RbColor.Black)
+                if (!IsRed(sib?.Right) && !IsRed(sib?.Left))
                 {
-                    if (sibling != null)
-                    {
-                        sibling.Color = RbColor.Red;
-                    }
-
-                    current = currentParent;
-                    currentParent = current.Parent;
+                    if (sib != null) sib.Color = RbColor.Red;
+                    x = parent;
+                    parent = x.Parent;
                 }
                 else
                 {
-                    if (ColorOf(sibling?.Left) == RbColor.Black)
+                    if (!IsRed(sib?.Left))
                     {
-                        if (sibling?.Right != null)
+                        if (sib?.Right != null) sib.Right.Color = RbColor.Black;
+                        if (sib != null)
                         {
-                            sibling.Right.Color = RbColor.Black;
+                            sib.Color = RbColor.Red;
+                            RotateLeft(sib);
                         }
-
-                        if (sibling != null)
-                        {
-                            sibling.Color = RbColor.Red;
-                            RotateLeftLocal(sibling);
-                        }
-
-                        sibling = currentParent.Left;
+                        sib = parent.Left;
                     }
 
-                    if (sibling != null)
-                    {
-                        sibling.Color = currentParent.Color;
-                    }
-
-                    currentParent.Color = RbColor.Black;
-                    if (sibling?.Left != null)
-                    {
-                        sibling.Left.Color = RbColor.Black;
-                    }
-
-                    RotateRightLocal(currentParent);
-                    current = Root;
-                    currentParent = null;
+                    if (sib != null) sib.Color = parent.Color;
+                    parent.Color = RbColor.Black;
+                    if (sib?.Left != null) sib.Left.Color = RbColor.Black;
+                    RotateRight(parent);
+                    x = Root;
+                    parent = null;
                 }
             }
         }
 
-        if (current != null)
-        {
-            current.Color = RbColor.Black;
-        }
+        if (x != null) x.Color = RbColor.Black;
     }
 
-    private void RotateLeftLocal(RbNode<TKey, TValue> x)
+    private bool IsRed(RbNode<TKey, TValue>? node) => node?.Color == RbColor.Red;
+
+    private RbNode<TKey, TValue> Min(RbNode<TKey, TValue> node)
     {
-        RbNode<TKey, TValue>? y = x.Right;
-        if (y == null)
-        {
-            return;
-        }
-
-        x.Right = y.Left;
-        if (y.Left != null)
-        {
-            y.Left.Parent = x;
-        }
-
-        y.Parent = x.Parent;
-        if (x.Parent == null)
-        {
-            Root = y;
-        }
-        else if (x.IsLeftChild)
-        {
-            x.Parent.Left = y;
-        }
-        else
-        {
-            x.Parent.Right = y;
-        }
-
-        y.Left = x;
-        x.Parent = y;
-    }
-
-    private void RotateRightLocal(RbNode<TKey, TValue> y)
-    {
-        RbNode<TKey, TValue>? x = y.Left;
-        if (x == null)
-        {
-            return;
-        }
-
-        y.Left = x.Right;
-        if (x.Right != null)
-        {
-            x.Right.Parent = y;
-        }
-
-        x.Parent = y.Parent;
-        if (y.Parent == null)
-        {
-            Root = x;
-        }
-        else if (y.IsLeftChild)
-        {
-            y.Parent.Left = x;
-        }
-        else
-        {
-            y.Parent.Right = x;
-        }
-
-        x.Right = y;
-        y.Parent = x;
-    }
-
-    private static RbColor ColorOf(RbNode<TKey, TValue>? node)
-    {
-        return node?.Color ?? RbColor.Black;
-    }
-
-    private static RbNode<TKey, TValue> Minimum(RbNode<TKey, TValue> node)
-    {
-        RbNode<TKey, TValue> current = node;
-        while (current.Left != null)
-        {
-            current = current.Left;
-        }
-
-        return current;
+        while (node.Left != null)
+            node = node.Left;
+        return node;
     }
 }
