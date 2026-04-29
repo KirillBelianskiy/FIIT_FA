@@ -266,6 +266,22 @@ public abstract class BinarySearchTreeBase<TKey, TValue, TNode>(IComparer<TKey>?
 
     protected void RotateBigLeft(TNode x)
     {
+        if (x.Right == null) return;
+
+        RotateRight(x.Right);
+        RotateLeft(x);
+    }
+
+    protected void RotateBigRight(TNode y)
+    {
+        if (y.Left == null) return;
+
+        RotateLeft(y.Left);
+        RotateRight(y);
+    }
+
+    protected void RotateDoubleLeft(TNode x)
+    {
         RotateLeft(x);
         if (x.Parent != null)
         {
@@ -273,29 +289,13 @@ public abstract class BinarySearchTreeBase<TKey, TValue, TNode>(IComparer<TKey>?
         }
     }
 
-    protected void RotateBigRight(TNode y)
+    protected void RotateDoubleRight(TNode y)
     {
         RotateRight(y);
         if (y.Parent != null)
         {
             RotateRight(y.Parent);
         }
-    }
-
-    protected void RotateDoubleLeft(TNode x)
-    {
-        if (x.Right == null) return;
-
-        RotateRight(x.Right);
-        RotateLeft(x);
-    }
-
-    protected void RotateDoubleRight(TNode y)
-    {
-        if (y.Left == null) return;
-
-        RotateLeft(y.Left);
-        RotateRight(y);
     }
 
     protected void Transplant(TNode u, TNode? v)
