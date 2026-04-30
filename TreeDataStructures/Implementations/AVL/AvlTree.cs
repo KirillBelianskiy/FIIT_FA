@@ -42,37 +42,36 @@ public class AvlTree<TKey, TValue> : BinarySearchTreeBase<TKey, TValue, AvlNode<
             if (bf > 1)
             {
                 if (Balance(node.Left!) < 0)
-                    RotateDoubleRight(node);
+                    RotateBigRight(node);
                 else
                     RotateRight(node);
 
-                var newRoot = node.Parent;
-                if (newRoot != null)
-                {
-                    FixHeight(node);
-                    FixHeight(newRoot);
-                }
-                node = newRoot?.Parent;
+                node = FixHeightAfterRotation(node);
             }
             else if (bf < -1)
             {
                 if (Balance(node.Right!) > 0)
-                    RotateDoubleLeft(node);
+                    RotateBigLeft(node);
                 else
                     RotateLeft(node);
 
-                var newRoot = node.Parent;
-                if (newRoot != null)
-                {
-                    FixHeight(node);
-                    FixHeight(newRoot);
-                }
-                node = newRoot?.Parent;
+                node = FixHeightAfterRotation(node);
             }
             else
             {
                 node = node.Parent;
             }
         }
+    }
+
+    private AvlNode<TKey, TValue>? FixHeightAfterRotation(AvlNode<TKey, TValue> node)
+    {
+        var newRoot = node.Parent;
+        if (newRoot != null)
+        {
+            FixHeight(node);
+            FixHeight(newRoot);
+        }
+        return newRoot;
     }
 }

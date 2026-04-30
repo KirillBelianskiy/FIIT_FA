@@ -34,24 +34,22 @@ public class SplayTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
                 if (nodeIsLeft && parentIsLeft)
                 {
                     // Zig-Zig (left-left)
-                    RotateBigRight(grandParent);
+                    RotateDoubleRight(grandParent);
                 }
                 else if (!nodeIsLeft && !parentIsLeft)
                 {
-                    //Zig-Zig (right-right)
+                    // Zig-Zig (right-right)
+                    RotateDoubleLeft(grandParent);
+                }
+                else if (nodeIsLeft && !parentIsLeft)
+                {
+                    // Zig-Zag (left-right)
                     RotateBigLeft(grandParent);
                 }
                 else
                 {
-                    // Zig-Zag
-                    if (nodeIsLeft)
-                    {
-                        RotateDoubleLeft(grandParent);
-                    }
-                    else
-                    {
-                        RotateDoubleRight(grandParent);
-                    }
+                    // Zig-Zag (right-left)
+                    RotateBigRight(grandParent);
                 }
             }
         }
@@ -67,30 +65,19 @@ public class SplayTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
 
     protected override void OnNodeRemoved(BstNode<TKey, TValue>? parent, BstNode<TKey, TValue>? child)
     {
-        Splay(parent ?? child);
-    }
-
-    private BstNode<TKey, TValue>? FindNode(TKey key, out BstNode<TKey, TValue>? lastVisited)
-    {
-        lastVisited = null;
-        var current = Root;
-        while (current != null)
+        if (parent != null)
         {
-            lastVisited = current;
-            int cmp = Comparer.Compare(key, current.Key);
-            if (cmp == 0)
-                return current;
-
-            current = cmp < 0 ? current.Left : current.Right;
+            Splay(parent);
         }
-
-        return null;
+        else if (child != null)
+        {
+            Splay(child);
+        }
     }
-
 
     public override bool TryGetValue(TKey key, [MaybeNullWhen(false)] out TValue value)
     {
-        var node = FindNode(key, out var  lastVisited);
+        var node = FindNode(key);
         if (node != null)
         {
             value = node.Value;
@@ -99,6 +86,16 @@ public class SplayTree<TKey, TValue> : BinarySearchTree<TKey, TValue>
         }
         else
         {
+            var current = Root;
+            BstNode<TKey, TValue>? lastVisited = null;
+            while (current != null)
+            {
+                lastVisited = current;
+                int cmp = Comparer.Compare(key, current.Key);
+                if (cmp == 0)
+                    break;
+                current = cmp < 0 ? current.Left : current.Right;
+            }
             Splay(lastVisited);
             value = default;
             return false;
